@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #0c1216;
+    color: #ffffff;
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+/* Custom sleek dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #060a0d;
+}
+::-webkit-scrollbar-thumb {
+  background: #88ff00;
+  border-radius: 9999px;
+}
+
+/* Clean UI - no CRT scanlines washing out 3D facial contours */
