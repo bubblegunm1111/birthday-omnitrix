@@ -125,6 +125,9 @@ export default function App() {
     let animId = null;
 
     const onWheel = (e) => {
+      // Trigger background music immediately on the very first wheel/trackpad scroll tick!
+      startMusicPlayback();
+
       // Allow normal native scrolling inside open modal cards
       if (e.target && e.target.closest && (e.target.closest('.overflow-y-auto') || e.target.closest('[role="dialog"]'))) {
         return;
@@ -182,6 +185,7 @@ export default function App() {
   // Automatically reset the watch state if the user scrolls back up!
   useEffect(() => {
     const handleScroll = () => {
+      startMusicPlayback();
       const baseMaxScroll = window.innerHeight * 2;
       if (baseMaxScroll <= 0) return;
 
