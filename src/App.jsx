@@ -80,10 +80,15 @@ export default function App() {
     }
     // STRICT RULE: Keep the loading screen active until 100% of the models are loaded!
     if (allDone) {
+      // Attempt immediate background playback
+      startMusicPlayback();
+      // If user hasn't clicked the button after 3 seconds, auto-dismiss
       setTimeout(() => {
-        setModelsLoaded(true);
-        startMusicPlayback();
-      }, 500);
+        setModelsLoaded((prev) => {
+          if (!prev) startMusicPlayback();
+          return true;
+        });
+      }, 3500);
     }
   }, [startMusicPlayback]);
 
@@ -572,7 +577,7 @@ export default function App() {
           </p>
         </div>
 
-        {/* Progress Bar */}
+        {/* Progress Bar & Status */}
         <div className="w-64 max-w-[85vw] h-1.5 bg-white/10 rounded-full overflow-hidden mt-6 border border-white/15">
           <div
             className="h-full bg-gradient-to-r from-emerald-500 to-[#88ff00] transition-all duration-300 shadow-[0_0_15px_#88ff00]"
@@ -582,6 +587,26 @@ export default function App() {
 
         <div className="font-mono text-[10px] text-emerald-400/80 mt-2 tracking-widest">
           {Math.max(12, loadProgress)}% COMPLETE
+        </div>
+
+        {/* TAP TO INITIALIZE / ENTER BUTTON (Guarantees unblocked AudioContext & sound on all mobile/desktop browsers!) */}
+        <div className="mt-7 z-20">
+          {loadProgress >= 100 ? (
+            <button
+              onClick={() => {
+                setModelsLoaded(true);
+                startMusicPlayback();
+              }}
+              className="px-6 py-2.5 rounded-full bg-[#88ff00] hover:brightness-110 active:scale-95 text-black font-display font-black text-xs tracking-[0.25em] uppercase shadow-[0_0_30px_#88ff00] transition animate-pulse cursor-pointer flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4 fill-current" />
+              <span>ACCESS PROTOCOL (ACTIVATE AUDIO) ➔</span>
+            </button>
+          ) : (
+            <div className="font-mono text-[11px] text-white/40 tracking-widest uppercase">
+              DECRYPTING DATA STREAMS...
+            </div>
+          )}
         </div>
       </div>
 
