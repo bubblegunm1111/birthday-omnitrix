@@ -47,24 +47,27 @@ export default function App() {
 
   const handleModelsProgress = useCallback((data) => {
     if (typeof data === 'boolean') {
-      setModelsLoaded(data);
-      setLoadProgress(100);
+      if (data) {
+        setLoadProgress(100);
+        setLoadStatusText('GALVANIC CORE ONLINE // ALL MODELS READY');
+        setTimeout(() => setModelsLoaded(true), 400);
+      }
       return;
     }
-    const { loaded, total, progress, isDone } = data;
+    const { loaded, total, progress, allDone } = data;
     setLoadProgress(progress);
-    if (loaded === 1) {
+    if (loaded <= 1) {
       setLoadStatusText('SYNCHRONIZING BEN TENNYSON DNA MATRIX...');
     } else if (loaded === 2) {
       setLoadStatusText('CALIBRATING 3D OMNITRIX CORE...');
     } else if (loaded < total) {
       setLoadStatusText(`STREAMING ALIEN ASSETS (${loaded}/${total})...`);
     } else {
-      setLoadStatusText('GALVANIC CORE ONLINE // READY FOR WIELDER');
+      setLoadStatusText('ALL 3D DNA MATRICES LOADED // STARTING EXPERIENCE');
     }
-    if (isDone) {
-      // Allow user in once core hero bust and omnitrix are ready, with small fade
-      setTimeout(() => setModelsLoaded(true), 600);
+    // STRICT RULE: Keep the loading screen active until 100% of the models are loaded!
+    if (allDone) {
+      setTimeout(() => setModelsLoaded(true), 500);
     }
   }, []);
 

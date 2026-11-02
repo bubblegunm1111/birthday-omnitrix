@@ -543,7 +543,6 @@ export default function OmnitrixScene({
           loaded: loadedCount,
           total: totalToLoad,
           progress,
-          isDone: loadedCount >= 2, // Critical core models (Ben + Omnitrix) ready!
           allDone: loadedCount >= totalToLoad,
         });
       }
