@@ -296,28 +296,45 @@ export default function App() {
     }
   }, [currentTrackIndex]);
 
-  // Immediate autoplay on initial load, with one-time fallback on first user gesture
+  // Immediate autoplay on initial load, with eager triggers on scroll, wheel, touch or pointer
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.play().then(() => {
-      setIsMusicPlaying(true);
-    }).catch(() => {
-      // If browser blocks unprompted autoplay, start on the very first gesture
-      const onFirstGesture = () => {
+    audio.volume = 0.55;
+
+    const playAudio = () => {
+      if (audio && audio.paused) {
         audio.play().then(() => {
           setIsMusicPlaying(true);
         }).catch(() => {});
-        ['pointerdown', 'touchstart', 'scroll', 'keydown', 'wheel'].forEach((evt) => {
-          window.removeEventListener(evt, onFirstGesture);
-        });
-      };
+      }
+    };
 
-      ['pointerdown', 'touchstart', 'scroll', 'keydown', 'wheel'].forEach((evt) => {
-        window.addEventListener(evt, onFirstGesture, { passive: true });
+    // Try playing immediately
+    playAudio();
+
+    // Listen to scroll, wheel, touch, and pointer events so the very first scroll tick starts the music instantly!
+    const triggerEvents = ['wheel', 'scroll', 'pointerdown', 'touchstart', 'keydown'];
+    const handleFirstInteraction = () => {
+      playAudio();
+      triggerEvents.forEach((evt) => {
+        window.removeEventListener(evt, handleFirstInteraction, { capture: true });
+        document.removeEventListener(evt, handleFirstInteraction, { capture: true });
       });
+    };
+
+    triggerEvents.forEach((evt) => {
+      window.addEventListener(evt, handleFirstInteraction, { capture: true, passive: true });
+      document.addEventListener(evt, handleFirstInteraction, { capture: true, passive: true });
     });
+
+    return () => {
+      triggerEvents.forEach((evt) => {
+        window.removeEventListener(evt, handleFirstInteraction, { capture: true });
+        document.removeEventListener(evt, handleFirstInteraction, { capture: true });
+      });
+    };
   }, []);
 
   // Keyboard support: ArrowLeft / ArrowRight / A / D
