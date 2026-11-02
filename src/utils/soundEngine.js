@@ -332,6 +332,117 @@ class SoundEngine {
       osc.stop(now + i * 0.08 + 2.9);
     });
   }
+
+  // Calm, heartwarming nostalgic electric-piano & warm ambient pad music for the Master Birthday Vault!
+  startHeartwarmingMusic() {
+    this.stopHeartwarmingMusic();
+    this.init();
+
+    // Progression: Cmaj9 -> G6/9 -> Am9 -> Fmaj9 (warm, emotional, nostalgic)
+    const progression = [
+      {
+        pad: [130.81, 196.00, 246.94, 329.63], // C2, G3, B3, E4
+        notes: [523.25, 659.25, 587.33, 493.88, 392.00, 523.25], // C5, E5, D5, B4, G4, C5
+      },
+      {
+        pad: [98.00, 196.00, 246.94, 293.66], // G2, G3, B3, D4
+        notes: [493.88, 587.33, 659.25, 587.33, 392.00, 493.88], // B4, D5, E5, D5, G4, B4
+      },
+      {
+        pad: [110.00, 164.81, 220.00, 261.63], // A2, E3, A3, C4
+        notes: [523.25, 493.88, 440.00, 392.00, 523.25, 659.25], // C5, B4, A4, G4, C5, E5
+      },
+      {
+        pad: [87.31, 174.61, 220.00, 261.63], // F2, F3, A3, C4
+        notes: [440.00, 523.25, 659.25, 587.33, 523.25, 392.00], // A4, C5, E5, D5, C5, G4
+      },
+    ];
+
+    let stepIndex = 0;
+
+    const playBar = () => {
+      if (this.muted || !this.heartwarmingActive) return;
+      this.init();
+      const now = this.ctx.currentTime;
+      const bar = progression[stepIndex % progression.length];
+      stepIndex++;
+
+      // 1. Soft, lush warm synth pad chord (4.2 seconds swell)
+      bar.pad.forEach((freq) => {
+        const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        sub.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        sub.frequency.setValueAtTime(freq * 1.003, now); // Gentle chorus detune
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(900, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.032, now + 1.1);
+        gain.gain.linearRampToValueAtTime(0.025, now + 2.8);
+        gain.gain.exponentialRampToValueAtTime(0.0005, now + 4.3);
+
+        osc.connect(filter);
+        sub.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        sub.start(now);
+        osc.stop(now + 4.4);
+        sub.stop(now + 4.4);
+      });
+
+      // 2. Delicate, warm music-box / Rhodes arpeggio notes
+      bar.notes.forEach((noteFreq, i) => {
+        const noteTime = now + i * 0.64;
+        const osc = this.ctx.createOscillator();
+        const overtone = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        overtone.type = 'sine';
+        osc.frequency.setValueAtTime(noteFreq, noteTime);
+        overtone.frequency.setValueAtTime(noteFreq * 2, noteTime);
+
+        gain.gain.setValueAtTime(0.0001, noteTime);
+        gain.gain.linearRampToValueAtTime(0.045, noteTime + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0008, noteTime + 1.75);
+
+        const overtoneGain = this.ctx.createGain();
+        overtoneGain.gain.setValueAtTime(0.0001, noteTime);
+        overtoneGain.gain.linearRampToValueAtTime(0.008, noteTime + 0.02);
+        overtoneGain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.45);
+
+        osc.connect(gain);
+        overtone.connect(overtoneGain);
+        overtoneGain.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(noteTime);
+        overtone.start(noteTime);
+        osc.stop(noteTime + 1.8);
+        overtone.stop(noteTime + 0.5);
+      });
+    };
+
+    this.heartwarmingActive = true;
+    playBar();
+    this.heartwarmingTimer = setInterval(playBar, 3840);
+  }
+
+  stopHeartwarmingMusic() {
+    this.heartwarmingActive = false;
+    if (this.heartwarmingTimer) {
+      clearInterval(this.heartwarmingTimer);
+      this.heartwarmingTimer = null;
+    }
+  }
 }
 
 export const soundEngine = new SoundEngine();

@@ -45,9 +45,10 @@ export default function App() {
   const [transformFlash, setTransformFlash] = useState(false);
   const audioRef = useRef(null);
   const userPausedRef = useRef(false);
+  const inMemoryVaultRef = useRef(false);
 
   const startMusicPlayback = useCallback(() => {
-    if (userPausedRef.current) return;
+    if (userPausedRef.current || inMemoryVaultRef.current) return;
     const audio = audioRef.current;
     if (!audio) return;
     audio.volume = 0.55;
@@ -307,7 +308,7 @@ export default function App() {
     audio.volume = 0.55;
 
     const tryPlayUnmuted = () => {
-      if (userPausedRef.current || !audio) return;
+      if (userPausedRef.current || inMemoryVaultRef.current || !audio) return;
       audio.muted = false;
       audio.volume = 0.55;
       if (audio.paused) {
@@ -343,7 +344,7 @@ export default function App() {
     });
 
     const interval = setInterval(() => {
-      if (userPausedRef.current || !audio) return;
+      if (userPausedRef.current || inMemoryVaultRef.current || !audio) return;
       if (!audio.paused) {
         clearInterval(interval);
         return;
@@ -434,9 +435,26 @@ export default function App() {
 
   const handleOpenMemoryVault = () => {
     clearStageTimer();
+    inMemoryVaultRef.current = true;
+    const audio = audioRef.current;
+    if (audio && !audio.paused) {
+      audio.pause();
+    }
     soundEngine.playMemoryUnlock();
+    soundEngine.startHeartwarmingMusic();
     setWatchStage('memory');
     setShowBenHologram(true);
+  };
+
+  const handleCloseMemoryVault = () => {
+    inMemoryVaultRef.current = false;
+    soundEngine.stopHeartwarmingMusic();
+    setShowBenHologram(false);
+    setWatchStage('diamond_select');
+    if (!userPausedRef.current && audioRef.current) {
+      audioRef.current.volume = 0.55;
+      audioRef.current.play().then(() => setIsMusicPlaying(true)).catch(() => {});
+    }
   };
 
   const handleToggleDamage = () => {
@@ -716,7 +734,11 @@ export default function App() {
                 >
                   <Music className={`w-3.5 h-3.5 ${isMusicPlaying ? 'animate-pulse' : ''}`} />
                   <span className="font-bold tracking-wider">
-                    {isMusicPlaying ? BEN10_TRACKS[currentTrackIndex].name : 'MUSIC: OFF'}
+                    {watchStage === 'memory'
+                      ? 'BIRTHDAY SERENADE'
+                      : isMusicPlaying
+                      ? BEN10_TRACKS[currentTrackIndex].name
+                      : 'MUSIC: OFF'}
                   </span>
                 </button>
 
@@ -1152,10 +1174,7 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => {
-                  setShowBenHologram(false);
-                  setWatchStage('diamond_select');
-                }}
+                onClick={handleCloseMemoryVault}
                 className="self-start md:self-center px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 font-mono text-xs text-white shrink-0"
               >
                 RETURN TO EXPERIENCE [X]
