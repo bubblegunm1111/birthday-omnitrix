@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { ALIENS } from '../data/aliens';
 import {
   preloadOmnitrixFaceImages,
@@ -528,6 +529,11 @@ export default function OmnitrixScene({
 
     // 6. LOAD USER'S REAL GLB MODELS (Ben Tennyson, New Omnitrix, and all 8 Aliens!)
     const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('/draco/');
+    dracoLoader.setDecoderConfig({ type: 'js' });
+    loader.setDRACOLoader(dracoLoader);
+
     let loadedCount = 0;
     const totalToLoad = 10;
     const markLoaded = () => {
