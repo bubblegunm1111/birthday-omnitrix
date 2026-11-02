@@ -37,23 +37,27 @@ export default function App() {
   const [isDamaged, setIsDamaged] = useState(false);
   const [selectedAlienIndex, setSelectedAlienIndex] = useState(1); // Default to XLR8 (new 3D GLB!)
   const [isMuted, setIsMuted] = useState(false);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [loadProgress, setLoadProgress] = useState(15);
   const [loadStatusText, setLoadStatusText] = useState('INTERCEPTING GALVANIC TRANSMISSION...');
   const [transformFlash, setTransformFlash] = useState(false);
   const audioRef = useRef(null);
+  const userPausedRef = useRef(false);
 
   const startMusicPlayback = useCallback(() => {
+    if (userPausedRef.current) return;
     const audio = audioRef.current;
-    if (audio) {
-      audio.volume = 0.55;
+    if (!audio) return;
+    audio.volume = 0.55;
+    audio.muted = false;
+    if (audio.paused) {
       audio.play().then(() => {
         setIsMusicPlaying(true);
-      }).catch((e) => {
-        console.log('Audio autoplay prevented by browser until first tap:', e);
-      });
+      }).catch(() => {});
+    } else {
+      setIsMusicPlaying(true);
     }
   }, []);
 
@@ -262,25 +266,24 @@ export default function App() {
     setIsMuted(nextMuted);
   }, []);
 
-  const userPausedRef = useRef(false);
-
   const toggleThemeSong = useCallback((e) => {
     if (e) e.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (!audio.paused) {
+    if (!audio.paused && !audio.muted && isMusicPlaying) {
       userPausedRef.current = true;
       audio.pause();
       setIsMusicPlaying(false);
     } else {
       userPausedRef.current = false;
+      audio.muted = false;
       audio.volume = 0.55;
       audio.play().then(() => {
         setIsMusicPlaying(true);
       }).catch(() => {});
     }
-  }, []);
+  }, [isMusicPlaying]);
 
   const handleNextTrack = useCallback((e) => {
     if (e) e.stopPropagation();
@@ -299,6 +302,7 @@ export default function App() {
     audio.src = BEN10_TRACKS[currentTrackIndex].src;
     audio.load();
     if (!userPausedRef.current) {
+      audio.muted = false;
       audio.volume = 0.55;
       audio.play().then(() => {
         setIsMusicPlaying(true);
@@ -306,16 +310,51 @@ export default function App() {
     }
   }, [currentTrackIndex]);
 
-  // Persistent auto-unlocking audio: keeps trying on any movement/gesture until it actually plays!
+  // Autoplay strategy:
+  // 1. Start playing unmuted immediately if browser permits.
+  // 2. If browser blocks unmuted autoplay on fresh page load, start playing muted in the background so the audio
+  //    stream is already live & running, then automatically unmute on the very first mouse move, scroll, or tap!
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.volume = 0.55;
 
-    const tryPlay = () => {
+    const unlockAndPlay = () => {
       if (userPausedRef.current || !audio) return;
+      audio.muted = false;
+      audio.volume = 0.55;
       if (audio.paused) {
-        audio.volume = 0.55;
+        audio.play().then(() => {
+          setIsMusicPlaying(true);
+        }).catch(() => {
+          // Fallback: start playing muted (100% allowed by all browsers without gesture)
+          audio.muted = true;
+          audio.play().catch(() => {});
+        });
+      }
+    };
+
+    unlockAndPlay();
+    audio.addEventListener('canplay', unlockAndPlay);
+
+    const events = [
+      'pointerdown',
+      'pointermove',
+      'mousemove',
+      'mousedown',
+      'touchstart',
+      'touchend',
+      'keydown',
+      'wheel',
+      'scroll',
+      'click',
+    ];
+
+    const onUserActivity = () => {
+      if (userPausedRef.current || !audio) return;
+      audio.muted = false;
+      audio.volume = 0.55;
+      if (audio.paused) {
         audio.play().then(() => {
           setIsMusicPlaying(true);
         }).catch(() => {});
@@ -324,35 +363,32 @@ export default function App() {
       }
     };
 
-    // Try immediately and when audio buffer finishes loading
-    tryPlay();
-    audio.addEventListener('canplaythrough', tryPlay);
-
-    // Keep listeners active until audio.paused === false (do NOT remove on first failed wheel event!)
-    const events = ['pointerdown', 'mousedown', 'touchstart', 'touchend', 'keydown', 'wheel', 'scroll', 'click'];
-    const onActivity = () => {
-      if (userPausedRef.current) return;
-      if (audio && !audio.paused) {
-        setIsMusicPlaying(true);
-        events.forEach((evt) => {
-          window.removeEventListener(evt, onActivity, { capture: true });
-          document.removeEventListener(evt, onActivity, { capture: true });
-        });
-        return;
-      }
-      tryPlay();
-    };
-
     events.forEach((evt) => {
-      window.addEventListener(evt, onActivity, { capture: true, passive: true });
-      document.addEventListener(evt, onActivity, { capture: true, passive: true });
+      window.addEventListener(evt, onUserActivity, { capture: true, passive: true });
+      document.addEventListener(evt, onUserActivity, { capture: true, passive: true });
     });
 
+    // Also poll briefly right as splash screen ends
+    const interval = setInterval(() => {
+      if (userPausedRef.current || !audio) return;
+      if (!audio.paused && !audio.muted) {
+        clearInterval(interval);
+        return;
+      }
+      audio.muted = false;
+      audio.volume = 0.55;
+      audio.play().then(() => {
+        setIsMusicPlaying(true);
+        clearInterval(interval);
+      }).catch(() => {});
+    }, 800);
+
     return () => {
-      audio.removeEventListener('canplaythrough', tryPlay);
+      clearInterval(interval);
+      audio.removeEventListener('canplay', unlockAndPlay);
       events.forEach((evt) => {
-        window.removeEventListener(evt, onActivity, { capture: true });
-        document.removeEventListener(evt, onActivity, { capture: true });
+        window.removeEventListener(evt, onUserActivity, { capture: true });
+        document.removeEventListener(evt, onUserActivity, { capture: true });
       });
     };
   }, []);
@@ -1235,8 +1271,6 @@ export default function App() {
         ref={audioRef}
         src={BEN10_TRACKS[currentTrackIndex].src}
         onEnded={handleNextTrack}
-        onPlay={() => setIsMusicPlaying(true)}
-        onPause={() => setIsMusicPlaying(false)}
         loop={BEN10_TRACKS.length === 1}
         autoPlay
         playsInline
