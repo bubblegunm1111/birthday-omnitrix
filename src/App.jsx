@@ -52,13 +52,9 @@ export default function App() {
     if (!audio) return;
     audio.volume = 0.55;
     audio.muted = false;
-    if (audio.paused) {
-      audio.play().then(() => {
-        setIsMusicPlaying(true);
-      }).catch(() => {});
-    } else {
+    audio.play().then(() => {
       setIsMusicPlaying(true);
-    }
+    }).catch(() => {});
   }, []);
 
   const handleModelsProgress = useCallback((data) => {
@@ -310,47 +306,14 @@ export default function App() {
     }
   }, [currentTrackIndex]);
 
-  // Autoplay strategy:
-  // 1. Start playing unmuted immediately if browser permits.
-  // 2. If browser blocks unmuted autoplay on fresh page load, start playing muted in the background so the audio
-  //    stream is already live & running, then automatically unmute on the very first mouse move, scroll, or tap!
+  // Autoplay strategy: ALWAYS keep audio.muted = false (NEVER set audio.muted = true so Chrome never force-pauses it!)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    audio.muted = false;
     audio.volume = 0.55;
 
-    const unlockAndPlay = () => {
-      if (userPausedRef.current || !audio) return;
-      audio.muted = false;
-      audio.volume = 0.55;
-      if (audio.paused) {
-        audio.play().then(() => {
-          setIsMusicPlaying(true);
-        }).catch(() => {
-          // Fallback: start playing muted (100% allowed by all browsers without gesture)
-          audio.muted = true;
-          audio.play().catch(() => {});
-        });
-      }
-    };
-
-    unlockAndPlay();
-    audio.addEventListener('canplay', unlockAndPlay);
-
-    const events = [
-      'pointerdown',
-      'pointermove',
-      'mousemove',
-      'mousedown',
-      'touchstart',
-      'touchend',
-      'keydown',
-      'wheel',
-      'scroll',
-      'click',
-    ];
-
-    const onUserActivity = () => {
+    const tryPlayUnmuted = () => {
       if (userPausedRef.current || !audio) return;
       audio.muted = false;
       audio.volume = 0.55;
@@ -363,32 +326,46 @@ export default function App() {
       }
     };
 
+    tryPlayUnmuted();
+    audio.addEventListener('loadeddata', tryPlayUnmuted);
+    audio.addEventListener('canplay', tryPlayUnmuted);
+    audio.addEventListener('canplaythrough', tryPlayUnmuted);
+
+    const events = [
+      'pointerdown',
+      'pointerup',
+      'mousedown',
+      'mouseup',
+      'touchstart',
+      'touchend',
+      'keydown',
+      'wheel',
+      'scroll',
+      'click',
+    ];
+
     events.forEach((evt) => {
-      window.addEventListener(evt, onUserActivity, { capture: true, passive: true });
-      document.addEventListener(evt, onUserActivity, { capture: true, passive: true });
+      window.addEventListener(evt, tryPlayUnmuted, { capture: true, passive: true });
+      document.addEventListener(evt, tryPlayUnmuted, { capture: true, passive: true });
     });
 
-    // Also poll briefly right as splash screen ends
     const interval = setInterval(() => {
       if (userPausedRef.current || !audio) return;
-      if (!audio.paused && !audio.muted) {
+      if (!audio.paused) {
         clearInterval(interval);
         return;
       }
-      audio.muted = false;
-      audio.volume = 0.55;
-      audio.play().then(() => {
-        setIsMusicPlaying(true);
-        clearInterval(interval);
-      }).catch(() => {});
-    }, 800);
+      tryPlayUnmuted();
+    }, 600);
 
     return () => {
       clearInterval(interval);
-      audio.removeEventListener('canplay', unlockAndPlay);
+      audio.removeEventListener('loadeddata', tryPlayUnmuted);
+      audio.removeEventListener('canplay', tryPlayUnmuted);
+      audio.removeEventListener('canplaythrough', tryPlayUnmuted);
       events.forEach((evt) => {
-        window.removeEventListener(evt, onUserActivity, { capture: true });
-        document.removeEventListener(evt, onUserActivity, { capture: true });
+        window.removeEventListener(evt, tryPlayUnmuted, { capture: true });
+        document.removeEventListener(evt, tryPlayUnmuted, { capture: true });
       });
     };
   }, []);
