@@ -469,9 +469,8 @@ export default function OmnitrixScene({
     scene.add(alienHologramContainer);
 
     const alienMeshesMap = {};
-    ALIENS.forEach((alien) => {
-      alienMeshesMap[alien.id] = createProceduralAlienHologram(alien.id, alien.emissiveHex);
-    });
+    // Do NOT create wireframe fallbacks - leave slots empty until the real GLB finishes loading
+    // so no ugly low-poly placeholders appear!
 
     function updateActiveAlienMesh(index) {
       while (alienHologramContainer.children.length > 0) {
@@ -538,8 +537,15 @@ export default function OmnitrixScene({
     const totalToLoad = 10;
     const markLoaded = () => {
       loadedCount++;
-      if (loadedCount >= totalToLoad && modelsLoadedCallback) {
-        modelsLoadedCallback(true);
+      const progress = Math.min(100, Math.round((loadedCount / totalToLoad) * 100));
+      if (modelsLoadedCallback) {
+        modelsLoadedCallback({
+          loaded: loadedCount,
+          total: totalToLoad,
+          progress,
+          isDone: loadedCount >= 2, // Critical core models (Ben + Omnitrix) ready!
+          allDone: loadedCount >= totalToLoad,
+        });
       }
     };
 

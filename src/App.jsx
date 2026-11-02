@@ -40,8 +40,33 @@ export default function App() {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [loadStatusText, setLoadStatusText] = useState('CONNECTING TO GALVAN PRIME...');
   const [transformFlash, setTransformFlash] = useState(false);
   const audioRef = useRef(null);
+
+  const handleModelsProgress = useCallback((data) => {
+    if (typeof data === 'boolean') {
+      setModelsLoaded(data);
+      setLoadProgress(100);
+      return;
+    }
+    const { loaded, total, progress, isDone } = data;
+    setLoadProgress(progress);
+    if (loaded === 1) {
+      setLoadStatusText('SYNCHRONIZING BEN TENNYSON DNA MATRIX...');
+    } else if (loaded === 2) {
+      setLoadStatusText('CALIBRATING 3D OMNITRIX CORE...');
+    } else if (loaded < total) {
+      setLoadStatusText(`STREAMING ALIEN ASSETS (${loaded}/${total})...`);
+    } else {
+      setLoadStatusText('GALVANIC CORE ONLINE // READY FOR WIELDER');
+    }
+    if (isDone) {
+      // Allow user in once core hero bust and omnitrix are ready, with small fade
+      setTimeout(() => setModelsLoaded(true), 600);
+    }
+  }, []);
 
   // Alien Ability Mini-Game & Arena feature flag (set to true to restore anytime)
   const SHOW_GAMES_AND_ARENA = false;
@@ -494,8 +519,52 @@ export default function App() {
         onWatchClick={handleWatchClick}
         onAbilityHit={handleAbilityHit}
         showBenHologram={showBenHologram}
-        modelsLoadedCallback={setModelsLoaded}
+        modelsLoadedCallback={handleModelsProgress}
       />
+
+      {/* FULLSCREEN GALVANIC HUD LOADING SCREEN (Hides site completely until 3D models are loaded) */}
+      <div
+        className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#070b0e] transition-all duration-700 pointer-events-auto ${
+          modelsLoaded ? 'opacity-0 pointer-events-none scale-105' : 'opacity-100 scale-100'
+        }`}
+      >
+        {/* Background Ambient Glow */}
+        <div className="absolute w-[450px] h-[450px] rounded-full bg-[#88ff00]/10 blur-[120px] pointer-events-none" />
+
+        {/* Omnitrix Dial Graphic Spinner */}
+        <div className="relative flex items-center justify-center mb-8">
+          <div className="w-28 h-28 rounded-full border-2 border-[#88ff00]/20 border-t-[#88ff00] animate-spin shadow-[0_0_40px_rgba(136,255,0,0.35)]" />
+          <div className="absolute w-20 h-20 rounded-full border-2 border-[#88ff00]/40 border-b-[#88ff00] animate-[spin_1.5s_linear_infinite_reverse]" />
+          <div className="absolute w-12 h-12 rounded-full bg-[#88ff00]/20 border border-[#88ff00] flex items-center justify-center animate-pulse">
+            <Zap className="w-6 h-6 text-[#88ff00]" />
+          </div>
+        </div>
+
+        {/* Loading Header & Subtitle */}
+        <div className="text-center space-y-2 z-10 px-4">
+          <div className="font-mono text-xs tracking-[0.45em] text-[#88ff00] uppercase animate-pulse">
+            INITIALIZING LEVEL 20 GALVAN TECHNOLOGY
+          </div>
+          <h2 className="font-display text-2xl md:text-3xl font-black text-white tracking-wider uppercase">
+            LOADING 3D ASSETS
+          </h2>
+          <p className="font-mono text-[11px] text-white/60 tracking-wider">
+            {loadStatusText}
+          </p>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-64 max-w-[85vw] h-1.5 bg-white/10 rounded-full overflow-hidden mt-6 border border-white/15">
+          <div
+            className="h-full bg-gradient-to-r from-emerald-500 to-[#88ff00] transition-all duration-300 shadow-[0_0_15px_#88ff00]"
+            style={{ width: `${Math.max(12, loadProgress)}%` }}
+          />
+        </div>
+
+        <div className="font-mono text-[10px] text-emerald-400/80 mt-2 tracking-widest">
+          {Math.max(12, loadProgress)}% COMPLETE
+        </div>
+      </div>
 
       {/* BRIEF GREEN FLASH WHEN SLAMMING WATCH CLOSED TO PROJECT HOLOGRAM */}
       {transformFlash && (
