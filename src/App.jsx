@@ -40,7 +40,7 @@ export default function App() {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [loadProgress, setLoadProgress] = useState(0);
+  const [loadProgress, setLoadProgress] = useState(15);
   const [loadStatusText, setLoadStatusText] = useState('INTERCEPTING GALVANIC TRANSMISSION...');
   const [transformFlash, setTransformFlash] = useState(false);
   const audioRef = useRef(null);
@@ -65,12 +65,12 @@ export default function App() {
         setTimeout(() => {
           setModelsLoaded(true);
           startMusicPlayback();
-        }, 300);
+        }, 1200);
       }
       return;
     }
     const { loaded, total, progress, allDone } = data;
-    setLoadProgress(progress);
+    setLoadProgress(Math.max(15, progress));
     if (loaded <= 1) {
       setLoadStatusText('DETECTING LEVEL 20 ALIEN ARTIFACT IN DEEP SPACE...');
     } else if (loaded === 2) {
@@ -80,12 +80,12 @@ export default function App() {
     } else {
       setLoadStatusText('WIELDER RECOGNIZED // INITIATING BIRTHDAY TRANSMISSION...');
     }
-    // When 100% loaded, immediately remove loading screen & trigger music!
+    // Give user a solid, cinematic moment (1.5 seconds) to see 100% complete and read the message!
     if (allDone) {
       setTimeout(() => {
         setModelsLoaded(true);
         startMusicPlayback();
-      }, 400);
+      }, 1500);
     }
   }, [startMusicPlayback]);
 
