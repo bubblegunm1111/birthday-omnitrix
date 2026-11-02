@@ -118,22 +118,22 @@ export default function App() {
   }, []);
 
   // Smooth inertia scroll speed limiter:
-  // Dampens aggressive/fast mousewheel or trackpad flicking so the cinematic 3D animations glide smoothly!
+  // Calibrated to give a cinematic, luxurious glide so fast flicking never rushes through 3D animations
   useEffect(() => {
     let targetScrollY = window.scrollY;
     let currentScrollY = window.scrollY;
     let animId = null;
 
     const onWheel = (e) => {
-      // Allow normal scrolling inside open modal cards
+      // Allow normal native scrolling inside open modal cards
       if (e.target && e.target.closest && (e.target.closest('.overflow-y-auto') || e.target.closest('[role="dialog"]'))) {
         return;
       }
       e.preventDefault();
 
-      // Clamp delta to prevent ultra-fast flicking from skipping sections
-      const maxDelta = 75; // Maximum pixels per wheel tick
-      const clampedDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), maxDelta);
+      // Dampen wheel impulse: clamp maximum distance per flick down to 36px so it never jumps
+      const maxDelta = 36;
+      const clampedDelta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY * 0.45), maxDelta);
 
       const maxScroll = isCharacterSelected
         ? window.innerHeight * 3
@@ -146,9 +146,9 @@ export default function App() {
       if (!animId) {
         const smoothStep = () => {
           const diff = targetScrollY - currentScrollY;
-          if (Math.abs(diff) > 0.4) {
-            // Smooth easing factor (0.09) prevents abrupt jumps and provides a luxurious glide
-            currentScrollY += diff * 0.09;
+          if (Math.abs(diff) > 0.3) {
+            // Smooth cinematic friction (0.055) prevents abrupt jumps and delivers an ultra-smooth glide
+            currentScrollY += diff * 0.055;
             window.scrollTo(0, currentScrollY);
             animId = requestAnimationFrame(smoothStep);
           } else {
