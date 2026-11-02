@@ -62,11 +62,15 @@ export default function App() {
     if (typeof data === 'boolean') {
       if (data) {
         setLoadProgress(100);
-        setLoadStatusText('WIELDER IDENTIFIED // CLICK ANYWHERE TO OPEN TRANSMISSION');
+        setLoadStatusText('WIELDER RECOGNIZED // INITIATING BIRTHDAY TRANSMISSION...');
+        setTimeout(() => {
+          setModelsLoaded(true);
+          startMusicPlayback();
+        }, 1200);
       }
       return;
     }
-    const { loaded, total, progress } = data;
+    const { loaded, total, progress, allDone } = data;
     setLoadProgress(Math.max(15, progress));
     if (loaded <= 1) {
       setLoadStatusText('DETECTING LEVEL 20 ALIEN ARTIFACT IN DEEP SPACE...');
@@ -75,9 +79,15 @@ export default function App() {
     } else if (loaded < total) {
       setLoadStatusText(`DECRYPTING CLASSIFIED DNA ARCHIVES (${loaded}/${total})...`);
     } else {
-      setLoadStatusText('WIELDER RECOGNIZED // CLICK ANYWHERE TO OPEN TRANSMISSION');
+      setLoadStatusText('WIELDER RECOGNIZED // INITIATING BIRTHDAY TRANSMISSION...');
     }
-  }, []);
+    if (allDone) {
+      setTimeout(() => {
+        setModelsLoaded(true);
+        startMusicPlayback();
+      }, 1400);
+    }
+  }, [startMusicPlayback]);
 
   // Alien Ability Mini-Game & Arena feature flag (set to true to restore anytime)
   const SHOW_GAMES_AND_ARENA = false;
@@ -660,10 +670,10 @@ export default function App() {
             {Math.max(12, loadProgress)}% COMPLETE
           </div>
 
-          {/* Clear "Click Anywhere" Prompt once 100% loaded */}
+          {/* Subtle tiny prompt at the bottom */}
           {loadProgress >= 100 && (
-            <div className="mt-8 px-6 py-3 rounded-full bg-[#88ff00]/15 border border-[#88ff00] text-[#88ff00] font-display text-xs md:text-sm font-black tracking-[0.25em] uppercase shadow-[0_0_30px_rgba(136,255,0,0.35)] animate-bounce">
-              [ CLICK ANYWHERE ON SCREEN TO ENTER ]
+            <div className="mt-5 px-3 py-1 rounded-full bg-white/5 border border-white/15 text-white/50 font-mono text-[10px] tracking-widest uppercase">
+              click anywhere to enter
             </div>
           )}
         </div>
