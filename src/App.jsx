@@ -87,7 +87,7 @@ export default function App() {
   const [isCharacterSelected, setIsCharacterSelected] = useState(false);
   const [abilityLog, setAbilityLog] = useState('SYSTEM READY: Galvanic DNA matrix online.');
   const [memoryUnlocked, setMemoryUnlocked] = useState(false);
-  const [exploredAliens, setExploredAliens] = useState(() => new Set([0]));
+  const [exploredAliens, setExploredAliens] = useState(() => new Set());
   const [showBenHologram, setShowBenHologram] = useState(false);
   const [showVolvoGame, setShowVolvoGame] = useState(false);
   const [customOwnerName, setCustomOwnerName] = useState('COMMANDER TENNYSON');
@@ -460,6 +460,11 @@ export default function App() {
 
   const handleSelectCharacter = () => {
     setIsCharacterSelected(true);
+    setExploredAliens((prev) => {
+      const next = new Set(prev);
+      next.add(selectedAlienIndex);
+      return next;
+    });
     soundEngine.playTransformation();
 
     // Wait 1 frame for the extra 100vh section (`min-h-[400vh]`) to mount, then smoothly scroll down to it!
@@ -991,11 +996,6 @@ export default function App() {
                     onClick={() => {
                       soundEngine.playDialRotate(idx);
                       setSelectedAlienIndex(idx);
-                      setExploredAliens((prev) => {
-                        const next = new Set(prev);
-                        next.add(idx);
-                        return next;
-                      });
                     }}
                     className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all ${
                       isSelected
