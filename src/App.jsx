@@ -262,15 +262,20 @@ export default function App() {
     setIsMuted(nextMuted);
   }, []);
 
+  const userPausedRef = useRef(false);
+
   const toggleThemeSong = useCallback((e) => {
     if (e) e.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
 
     if (!audio.paused) {
+      userPausedRef.current = true;
       audio.pause();
       setIsMusicPlaying(false);
     } else {
+      userPausedRef.current = false;
+      audio.volume = 0.55;
       audio.play().then(() => {
         setIsMusicPlaying(true);
       }).catch(() => {});
@@ -279,60 +284,75 @@ export default function App() {
 
   const handleNextTrack = useCallback((e) => {
     if (e) e.stopPropagation();
+    userPausedRef.current = false;
     const next = (currentTrackIndex + 1) % BEN10_TRACKS.length;
     setCurrentTrackIndex(next);
   }, [currentTrackIndex]);
 
-  // When track index changes, update source & auto-play if music was active or initially starting
+  // Only reload track when the user actually switches tracks (skip on initial mount so autoplay isn't aborted!)
+  const prevTrackRef = useRef(currentTrackIndex);
   useEffect(() => {
+    if (prevTrackRef.current === currentTrackIndex) return;
+    prevTrackRef.current = currentTrackIndex;
     const audio = audioRef.current;
     if (!audio) return;
     audio.src = BEN10_TRACKS[currentTrackIndex].src;
     audio.load();
-    if (isMusicPlaying) {
+    if (!userPausedRef.current) {
+      audio.volume = 0.55;
       audio.play().then(() => {
         setIsMusicPlaying(true);
       }).catch(() => {});
     }
   }, [currentTrackIndex]);
 
-  // Immediate autoplay on initial load, with eager triggers on scroll, wheel, touch or pointer
+  // Persistent auto-unlocking audio: keeps trying on any movement/gesture until it actually plays!
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
     audio.volume = 0.55;
 
-    const playAudio = () => {
-      if (audio && audio.paused) {
+    const tryPlay = () => {
+      if (userPausedRef.current || !audio) return;
+      if (audio.paused) {
+        audio.volume = 0.55;
         audio.play().then(() => {
           setIsMusicPlaying(true);
         }).catch(() => {});
+      } else {
+        setIsMusicPlaying(true);
       }
     };
 
-    // Try playing immediately
-    playAudio();
+    // Try immediately and when audio buffer finishes loading
+    tryPlay();
+    audio.addEventListener('canplaythrough', tryPlay);
 
-    // Listen to scroll, wheel, touch, and pointer events so the very first scroll tick starts the music instantly!
-    const triggerEvents = ['wheel', 'scroll', 'pointerdown', 'touchstart', 'keydown'];
-    const handleFirstInteraction = () => {
-      playAudio();
-      triggerEvents.forEach((evt) => {
-        window.removeEventListener(evt, handleFirstInteraction, { capture: true });
-        document.removeEventListener(evt, handleFirstInteraction, { capture: true });
-      });
+    // Keep listeners active until audio.paused === false (do NOT remove on first failed wheel event!)
+    const events = ['pointerdown', 'mousedown', 'touchstart', 'touchend', 'keydown', 'wheel', 'scroll', 'click'];
+    const onActivity = () => {
+      if (userPausedRef.current) return;
+      if (audio && !audio.paused) {
+        setIsMusicPlaying(true);
+        events.forEach((evt) => {
+          window.removeEventListener(evt, onActivity, { capture: true });
+          document.removeEventListener(evt, onActivity, { capture: true });
+        });
+        return;
+      }
+      tryPlay();
     };
 
-    triggerEvents.forEach((evt) => {
-      window.addEventListener(evt, handleFirstInteraction, { capture: true, passive: true });
-      document.addEventListener(evt, handleFirstInteraction, { capture: true, passive: true });
+    events.forEach((evt) => {
+      window.addEventListener(evt, onActivity, { capture: true, passive: true });
+      document.addEventListener(evt, onActivity, { capture: true, passive: true });
     });
 
     return () => {
-      triggerEvents.forEach((evt) => {
-        window.removeEventListener(evt, handleFirstInteraction, { capture: true });
-        document.removeEventListener(evt, handleFirstInteraction, { capture: true });
+      audio.removeEventListener('canplaythrough', tryPlay);
+      events.forEach((evt) => {
+        window.removeEventListener(evt, onActivity, { capture: true });
+        document.removeEventListener(evt, onActivity, { capture: true });
       });
     };
   }, []);
@@ -1215,7 +1235,11 @@ export default function App() {
         ref={audioRef}
         src={BEN10_TRACKS[currentTrackIndex].src}
         onEnded={handleNextTrack}
+        onPlay={() => setIsMusicPlaying(true)}
+        onPause={() => setIsMusicPlaying(false)}
         loop={BEN10_TRACKS.length === 1}
+        autoPlay
+        playsInline
         preload="auto"
       />
     </div>
