@@ -47,11 +47,13 @@ export default function App() {
 
   const startMusicPlayback = useCallback(() => {
     const audio = audioRef.current;
-    if (audio && audio.paused) {
+    if (audio) {
       audio.volume = 0.55;
       audio.play().then(() => {
         setIsMusicPlaying(true);
-      }).catch(() => {});
+      }).catch((e) => {
+        console.log('Audio autoplay prevented by browser until first tap:', e);
+      });
     }
   }, []);
 
@@ -59,11 +61,11 @@ export default function App() {
     if (typeof data === 'boolean') {
       if (data) {
         setLoadProgress(100);
-        setLoadStatusText('WIELDER IDENTIFIED // LEVEL 20 CLEARANCE GRANTED');
+        setLoadStatusText('WIELDER IDENTIFIED // RESTRICTED ACCESS GRANTED');
         setTimeout(() => {
           setModelsLoaded(true);
           startMusicPlayback();
-        }, 400);
+        }, 300);
       }
       return;
     }
@@ -78,17 +80,12 @@ export default function App() {
     } else {
       setLoadStatusText('WIELDER RECOGNIZED // INITIATING BIRTHDAY TRANSMISSION...');
     }
-    // STRICT RULE: Keep the loading screen active until 100% of the models are loaded!
+    // When 100% loaded, immediately remove loading screen & trigger music!
     if (allDone) {
-      // Attempt immediate background playback
-      startMusicPlayback();
-      // If user hasn't clicked the button after 3 seconds, auto-dismiss
       setTimeout(() => {
-        setModelsLoaded((prev) => {
-          if (!prev) startMusicPlayback();
-          return true;
-        });
-      }, 3500);
+        setModelsLoaded(true);
+        startMusicPlayback();
+      }, 400);
     }
   }, [startMusicPlayback]);
 
@@ -586,26 +583,6 @@ export default function App() {
 
           <div className="font-mono text-[10px] text-emerald-400/80 mt-2 tracking-widest">
             {Math.max(12, loadProgress)}% COMPLETE
-          </div>
-
-          {/* TAP TO INITIALIZE / ENTER BUTTON (Guarantees unblocked AudioContext & sound on all mobile/desktop browsers!) */}
-          <div className="mt-7 z-20">
-            {loadProgress >= 100 ? (
-              <button
-                onClick={() => {
-                  setModelsLoaded(true);
-                  startMusicPlayback();
-                }}
-                className="px-6 py-2.5 rounded-full bg-[#88ff00] hover:brightness-110 active:scale-95 text-black font-display font-black text-xs tracking-[0.25em] uppercase shadow-[0_0_30px_#88ff00] transition animate-pulse cursor-pointer flex items-center gap-2"
-              >
-                <Zap className="w-4 h-4 fill-current" />
-                <span>ACCESS PROTOCOL (ACTIVATE AUDIO) ➔</span>
-              </button>
-            ) : (
-              <div className="font-mono text-[11px] text-white/40 tracking-widest uppercase">
-                DECRYPTING DATA STREAMS...
-              </div>
-            )}
           </div>
         </div>
       )}
