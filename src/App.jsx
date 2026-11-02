@@ -41,35 +41,51 @@ export default function App() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
-  const [loadStatusText, setLoadStatusText] = useState('CONNECTING TO GALVAN PRIME...');
+  const [loadStatusText, setLoadStatusText] = useState('INTERCEPTING GALVANIC TRANSMISSION...');
   const [transformFlash, setTransformFlash] = useState(false);
   const audioRef = useRef(null);
+
+  const startMusicPlayback = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio && audio.paused) {
+      audio.volume = 0.55;
+      audio.play().then(() => {
+        setIsMusicPlaying(true);
+      }).catch(() => {});
+    }
+  }, []);
 
   const handleModelsProgress = useCallback((data) => {
     if (typeof data === 'boolean') {
       if (data) {
         setLoadProgress(100);
-        setLoadStatusText('GALVANIC CORE ONLINE // ALL MODELS READY');
-        setTimeout(() => setModelsLoaded(true), 400);
+        setLoadStatusText('WIELDER IDENTIFIED // LEVEL 20 CLEARANCE GRANTED');
+        setTimeout(() => {
+          setModelsLoaded(true);
+          startMusicPlayback();
+        }, 400);
       }
       return;
     }
     const { loaded, total, progress, allDone } = data;
     setLoadProgress(progress);
     if (loaded <= 1) {
-      setLoadStatusText('SYNCHRONIZING BEN TENNYSON DNA MATRIX...');
+      setLoadStatusText('DETECTING LEVEL 20 ALIEN ARTIFACT IN DEEP SPACE...');
     } else if (loaded === 2) {
-      setLoadStatusText('CALIBRATING 3D OMNITRIX CORE...');
+      setLoadStatusText('CALIBRATING OMNITRIX TIME MATRIX...');
     } else if (loaded < total) {
-      setLoadStatusText(`STREAMING ALIEN ASSETS (${loaded}/${total})...`);
+      setLoadStatusText(`DECRYPTING CLASSIFIED DNA ARCHIVES (${loaded}/${total})...`);
     } else {
-      setLoadStatusText('ALL 3D DNA MATRICES LOADED // STARTING EXPERIENCE');
+      setLoadStatusText('WIELDER RECOGNIZED // INITIATING BIRTHDAY TRANSMISSION...');
     }
     // STRICT RULE: Keep the loading screen active until 100% of the models are loaded!
     if (allDone) {
-      setTimeout(() => setModelsLoaded(true), 500);
+      setTimeout(() => {
+        setModelsLoaded(true);
+        startMusicPlayback();
+      }, 500);
     }
-  }, []);
+  }, [startMusicPlayback]);
 
   // Alien Ability Mini-Game & Arena feature flag (set to true to restore anytime)
   const SHOW_GAMES_AND_ARENA = false;
@@ -546,12 +562,12 @@ export default function App() {
         {/* Loading Header & Subtitle */}
         <div className="text-center space-y-2 z-10 px-4">
           <div className="font-mono text-xs tracking-[0.45em] text-[#88ff00] uppercase animate-pulse">
-            INITIALIZING LEVEL 20 GALVAN TECHNOLOGY
+            AZMUTH CLASSIFIED PROTOCOL // EARTH ORBIT
           </div>
           <h2 className="font-display text-2xl md:text-3xl font-black text-white tracking-wider uppercase">
-            LOADING 3D ASSETS
+            RESTRICTED TRANSMISSION
           </h2>
-          <p className="font-mono text-[11px] text-white/60 tracking-wider">
+          <p className="font-mono text-xs text-[#88ff00]/90 tracking-widest uppercase">
             {loadStatusText}
           </p>
         </div>
