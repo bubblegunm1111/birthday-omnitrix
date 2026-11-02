@@ -547,68 +547,68 @@ export default function App() {
       />
 
       {/* FULLSCREEN GALVANIC HUD LOADING SCREEN (Hides site completely until 3D models are loaded) */}
-      <div
-        className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#070b0e] transition-all duration-700 pointer-events-auto ${
-          modelsLoaded ? 'opacity-0 pointer-events-none scale-105' : 'opacity-100 scale-100'
-        }`}
-      >
-        {/* Background Ambient Glow */}
-        <div className="absolute w-[450px] h-[450px] rounded-full bg-[#88ff00]/10 blur-[120px] pointer-events-none" />
+      {!modelsLoaded && (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#070b0e] pointer-events-auto"
+        >
+          {/* Background Ambient Glow */}
+          <div className="absolute w-[450px] h-[450px] rounded-full bg-[#88ff00]/10 blur-[120px] pointer-events-none" />
 
-        {/* Omnitrix Dial Graphic Spinner */}
-        <div className="relative flex items-center justify-center mb-8">
-          <div className="w-28 h-28 rounded-full border-2 border-[#88ff00]/20 border-t-[#88ff00] animate-spin shadow-[0_0_40px_rgba(136,255,0,0.35)]" />
-          <div className="absolute w-20 h-20 rounded-full border-2 border-[#88ff00]/40 border-b-[#88ff00] animate-[spin_1.5s_linear_infinite_reverse]" />
-          <div className="absolute w-12 h-12 rounded-full bg-[#88ff00]/20 border border-[#88ff00] flex items-center justify-center animate-pulse">
-            <Zap className="w-6 h-6 text-[#88ff00]" />
-          </div>
-        </div>
-
-        {/* Loading Header & Subtitle */}
-        <div className="text-center space-y-2 z-10 px-4">
-          <div className="font-mono text-xs tracking-[0.45em] text-[#88ff00] uppercase animate-pulse">
-            AZMUTH CLASSIFIED PROTOCOL // EARTH ORBIT
-          </div>
-          <h2 className="font-display text-2xl md:text-3xl font-black text-white tracking-wider uppercase">
-            RESTRICTED TRANSMISSION
-          </h2>
-          <p className="font-mono text-xs text-[#88ff00]/90 tracking-widest uppercase">
-            {loadStatusText}
-          </p>
-        </div>
-
-        {/* Progress Bar & Status */}
-        <div className="w-64 max-w-[85vw] h-1.5 bg-white/10 rounded-full overflow-hidden mt-6 border border-white/15">
-          <div
-            className="h-full bg-gradient-to-r from-emerald-500 to-[#88ff00] transition-all duration-300 shadow-[0_0_15px_#88ff00]"
-            style={{ width: `${Math.max(12, loadProgress)}%` }}
-          />
-        </div>
-
-        <div className="font-mono text-[10px] text-emerald-400/80 mt-2 tracking-widest">
-          {Math.max(12, loadProgress)}% COMPLETE
-        </div>
-
-        {/* TAP TO INITIALIZE / ENTER BUTTON (Guarantees unblocked AudioContext & sound on all mobile/desktop browsers!) */}
-        <div className="mt-7 z-20">
-          {loadProgress >= 100 ? (
-            <button
-              onClick={() => {
-                setModelsLoaded(true);
-                startMusicPlayback();
-              }}
-              className="px-6 py-2.5 rounded-full bg-[#88ff00] hover:brightness-110 active:scale-95 text-black font-display font-black text-xs tracking-[0.25em] uppercase shadow-[0_0_30px_#88ff00] transition animate-pulse cursor-pointer flex items-center gap-2"
-            >
-              <Zap className="w-4 h-4 fill-current" />
-              <span>ACCESS PROTOCOL (ACTIVATE AUDIO) ➔</span>
-            </button>
-          ) : (
-            <div className="font-mono text-[11px] text-white/40 tracking-widest uppercase">
-              DECRYPTING DATA STREAMS...
+          {/* Omnitrix Dial Graphic Spinner */}
+          <div className="relative flex items-center justify-center mb-8">
+            <div className="w-28 h-28 rounded-full border-2 border-[#88ff00]/20 border-t-[#88ff00] animate-spin shadow-[0_0_40px_rgba(136,255,0,0.35)]" />
+            <div className="absolute w-20 h-20 rounded-full border-2 border-[#88ff00]/40 border-b-[#88ff00] animate-[spin_1.5s_linear_infinite_reverse]" />
+            <div className="absolute w-12 h-12 rounded-full bg-[#88ff00]/20 border border-[#88ff00] flex items-center justify-center animate-pulse">
+              <Zap className="w-6 h-6 text-[#88ff00]" />
             </div>
-          )}
+          </div>
+
+          {/* Loading Header & Subtitle */}
+          <div className="text-center space-y-2 z-10 px-4">
+            <div className="font-mono text-xs tracking-[0.45em] text-[#88ff00] uppercase animate-pulse">
+              AZMUTH CLASSIFIED PROTOCOL // EARTH ORBIT
+            </div>
+            <h2 className="font-display text-2xl md:text-3xl font-black text-white tracking-wider uppercase">
+              RESTRICTED TRANSMISSION
+            </h2>
+            <p className="font-mono text-xs text-[#88ff00]/90 tracking-widest uppercase">
+              {loadStatusText}
+            </p>
+          </div>
+
+          {/* Progress Bar & Status */}
+          <div className="w-64 max-w-[85vw] h-1.5 bg-white/10 rounded-full overflow-hidden mt-6 border border-white/15">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 to-[#88ff00] transition-all duration-300 shadow-[0_0_15px_#88ff00]"
+              style={{ width: `${Math.max(12, loadProgress)}%` }}
+            />
+          </div>
+
+          <div className="font-mono text-[10px] text-emerald-400/80 mt-2 tracking-widest">
+            {Math.max(12, loadProgress)}% COMPLETE
+          </div>
+
+          {/* TAP TO INITIALIZE / ENTER BUTTON (Guarantees unblocked AudioContext & sound on all mobile/desktop browsers!) */}
+          <div className="mt-7 z-20">
+            {loadProgress >= 100 ? (
+              <button
+                onClick={() => {
+                  setModelsLoaded(true);
+                  startMusicPlayback();
+                }}
+                className="px-6 py-2.5 rounded-full bg-[#88ff00] hover:brightness-110 active:scale-95 text-black font-display font-black text-xs tracking-[0.25em] uppercase shadow-[0_0_30px_#88ff00] transition animate-pulse cursor-pointer flex items-center gap-2"
+              >
+                <Zap className="w-4 h-4 fill-current" />
+                <span>ACCESS PROTOCOL (ACTIVATE AUDIO) ➔</span>
+              </button>
+            ) : (
+              <div className="font-mono text-[11px] text-white/40 tracking-widest uppercase">
+                DECRYPTING DATA STREAMS...
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* BRIEF GREEN FLASH WHEN SLAMMING WATCH CLOSED TO PROJECT HOLOGRAM */}
       {transformFlash && (
